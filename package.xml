@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>mpc_controller</name>
+  <version>0.0.1</version>
+  <description>Generic native MPC solver library for ROS1 catkin workspaces.</description>
+
+  <maintainer email="furkan@todo.todo">furkan</maintainer>
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <export>
+  </export>
+</package>
