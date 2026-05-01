@@ -1,5 +1,5 @@
-#ifndef MPC_CONTROLLER_HPP
-#define MPC_CONTROLLER_HPP
+#ifndef GENERIC_MPC_CONTROLLER_HPP
+#define GENERIC_MPC_CONTROLLER_HPP
 
 #include <eigen3/Eigen/Dense>
 
@@ -86,4 +86,4 @@ private:
 
 } // namespace mpc_controller
 
-#endif // MPC_CONTROLLER_HPP
+#endif // GENERIC_MPC_CONTROLLER_HPP
