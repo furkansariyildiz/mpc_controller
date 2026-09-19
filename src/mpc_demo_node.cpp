@@ -1,6 +1,6 @@
 #include "mpc_controller/mpc.hpp"
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 
 #include <cmath>
 #include <iomanip>

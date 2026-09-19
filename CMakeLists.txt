@@ -1,23 +1,9 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.16)
 project(mpc_controller)
 
-add_compile_options(-std=c++14 -Wall -Wextra)
-
-find_package(catkin REQUIRED)
-
+add_compile_options(-Wall -Wextra -Wpedantic)
+find_package(ament_cmake REQUIRED)
 find_package(Eigen3 REQUIRED)
-
-catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES ${PROJECT_NAME}
-  DEPENDS EIGEN3
-)
-
-include_directories(
-  include
-  ${catkin_INCLUDE_DIRS}
-  ${EIGEN3_INCLUDE_DIRS}
-)
 
 add_library(${PROJECT_NAME}
   src/mpc.cpp
@@ -32,22 +18,22 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(${PROJECT_NAME}
-  ${catkin_LIBRARIES}
-)
+target_link_libraries(${PROJECT_NAME} PUBLIC Eigen3::Eigen)
+target_link_libraries(mpc_demo_node ${PROJECT_NAME})
 
-target_link_libraries(mpc_demo_node
-  ${PROJECT_NAME}
-  ${catkin_LIBRARIES}
-)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 
-install(TARGETS ${PROJECT_NAME} mpc_demo_node
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+install(TARGETS ${PROJECT_NAME}
+  EXPORT export_${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
+install(TARGETS mpc_demo_node DESTINATION lib/${PROJECT_NAME})
+install(DIRECTORY include/ DESTINATION include)
 
-install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  FILES_MATCHING PATTERN "*.hpp"
-)
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_include_directories(include)
+ament_export_dependencies(Eigen3)
+
+ament_package()

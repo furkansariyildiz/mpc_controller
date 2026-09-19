@@ -1,6 +1,6 @@
 # mpc_controller
 
-`mpc_controller` is a generic native Model Predictive Control solver packaged as a ROS1 catkin library. It is not tied to a vehicle, lateral control, robotics, or any specific physical model.
+`mpc_controller` is a generic native Model Predictive Control solver packaged as a ROS2 ament library (Humble). It is not tied to a vehicle, lateral control, robotics, or any specific physical model.
 
 You provide:
 
@@ -23,8 +23,9 @@ The solver returns:
 From the workspace root:
 
 ```bash
-catkin build mpc_controller
-source devel/setup.bash
+source /opt/ros/humble/setup.bash
+colcon build --packages-select mpc_controller
+source install/setup.bash
 ```
 
 ## Run The Demo
@@ -39,7 +40,7 @@ control = [acceleration]
 Run:
 
 ```bash
-rosrun mpc_controller mpc_demo_node
+ros2 run mpc_controller mpc_demo_node
 ```
 
 The executable prints the receding-horizon control loop: current position, velocity, selected acceleration command, and MPC cost.
@@ -151,7 +152,7 @@ problem.stage_cost =
   };
 ```
 
-## Using From Another Catkin Package
+## Using From Another ROS2 Package
 
 In `package.xml`:
 
@@ -162,12 +163,10 @@ In `package.xml`:
 In `CMakeLists.txt`:
 
 ```cmake
-find_package(catkin REQUIRED COMPONENTS
-  mpc_controller
-)
+find_package(mpc_controller REQUIRED)
 
 target_link_libraries(your_target
-  ${catkin_LIBRARIES}
+  mpc_controller::mpc_controller
 )
 ```
 

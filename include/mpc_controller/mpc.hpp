@@ -1,7 +1,7 @@
 #ifndef GENERIC_MPC_CONTROLLER_HPP
 #define GENERIC_MPC_CONTROLLER_HPP
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 
 #include <functional>
 #include <string>
