@@ -79,9 +79,6 @@ def solve_mpc(v_init: float, a_prev: float):
         for i in range(0, N):
             da = U_total[i + 1] - U_total[i]
             
-            # state_condition = state_condition and ((V[i] <= v_max) and (V[i] >= v_min))
-            # input_condition = input_condition and ((U[i] <= a_max) and (U[i] >= a_min))
-            # input_diff_condition = input_diff_condition and (abs(U_total[i + 1] - U_total[i]) <= da_max)
             values.extend([
                 v_max - V[i],
                 V[i] - v_min,
@@ -103,5 +100,19 @@ def solve_mpc(v_init: float, a_prev: float):
 
     return result
 
-print(solve_mpc(v_init, 0))
+result = solve_mpc(v_init, a_prev)
+
+if result.success:
+    print("Optimal acceelerations: ", result.x)
+    print("Pedicted velocities: ", predict(v_init, result.x, Ts, N))
+    print("Minimum Cost: ", result.fun)
+else:
+    print("Could not find any solution.")
+
+# TODO - Example
+# 1- Call solve_mpc with the current velocity
+# 2- If the solve is success, get the result.x[0]
+# 3- Forward one step with model equation
+# 4- Update applied acceleration as a_prev
+# 5- Solve the new state
 
