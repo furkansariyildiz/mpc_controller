@@ -26,6 +26,8 @@ a_min = -1.0
 a_max = 1.0
 da_max = 0.5
 
+# Simulation steps
+simulation_step = 3
 
 def predict(v_init: float, U: list, Ts: float, N: int):
     """
@@ -37,6 +39,7 @@ def predict(v_init: float, U: list, Ts: float, N: int):
     """
     V = []
     v = v_init
+    # print("V init on predict: ", v_init)
     for a in U:
         v = v + Ts * a
         V.append(v)  
@@ -100,14 +103,19 @@ def solve_mpc(v_init: float, a_prev: float):
 
     return result
 
-result = solve_mpc(v_init, a_prev)
 
-if result.success:
-    print("Optimal acceelerations: ", result.x)
-    print("Pedicted velocities: ", predict(v_init, result.x, Ts, N))
-    print("Minimum Cost: ", result.fun)
-else:
-    print("Could not find any solution.")
+
+for i in range(0, simulation_step):
+    result = solve_mpc(v_init, a_prev)
+    if result.success:
+        print("Optimal acceelerations: ", result.x)
+        print("Pedicted velocities: ", predict(v_init, result.x, Ts, N))
+        print("Minimum Cost: ", result.fun)
+        v_init = v_init + Ts * result.x[0]
+        a_prev = result.x[0]
+    else:
+        print("Could not find any solution.")
+
 
 # TODO - Example
 # 1- Call solve_mpc with the current velocity
