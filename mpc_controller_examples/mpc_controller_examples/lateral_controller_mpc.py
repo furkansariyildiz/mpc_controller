@@ -73,6 +73,11 @@ def solve_mpc(state_init: list, delta_prev: float):
         return tracking_cost + input_cost
 
     def margins(U: list):
+        """
+        @brief: Calculation of margin function to use constrains on the optimizer.
+        @param U: Road wheel angle command list.
+        @return Margin list
+        """
         X = predict(state_init, U, v, L, Ts)
         U_total = [delta_prev, *U]
 
