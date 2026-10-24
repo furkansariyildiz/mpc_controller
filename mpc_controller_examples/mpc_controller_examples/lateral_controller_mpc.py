@@ -11,12 +11,18 @@ delta_prev = math.radians(0)
 v = 4.0 # m/s
 L = 2.0 # m
 Ts = 0.1 # s
+simulation_step = 100
 
 # Weights
 Qy = 10
 Qpsi = 5 
 Rdelta = 1 
 Sdelta = 1 
+
+# Constrains:
+delta_max = math.radians(25) # rad
+delta_rate_max = math.radians(60) # rad/s
+delta_change_max = delta_rate_max * Ts # rad
 
 def predict(state_init: list, U: list, v: float, L: float, Ts: float):
     """
@@ -64,14 +70,50 @@ def solve_mpc(state_init: list, delta_prev: float):
             tracking_cost += (Qy * X[i][1]**2) + (Qpsi * X[i][2]**2) 
             input_cost += (Rdelta * U_total[i + 1]**2) + (Sdelta * (U_total[i + 1] - U_total[i])**2)
 
-            print("Lateral Error Cost: ", (Qy * X[i][1]**2))
-            print("Heading Error Cost: ", (Qpsi * X[i][2]**2))
-            print("Wheel Angle Command Cost: ", (Rdelta * U_total[i + 1]**2))
-            print("Wheel Angle Command Rate Cost: ", (Sdelta * (U_total[i + 1] - U_total[i])**2))
-
-        print("Total Cost: ", (tracking_cost + input_cost))
         return tracking_cost + input_cost
 
-    return cost(U)
+    def margins(U: list):
+        X = predict(state_init, U, v, L, Ts)
+        U_total = [delta_prev, *U]
+
+        values = []
+
+        for i in range(0, len(U)):
+            d_delta = U_total[i + 1] - U_total[i]
+
+            values.extend([
+                delta_max - U[i],
+                U[i] + delta_max,
+                delta_change_max - d_delta,
+                d_delta + delta_change_max
+            ])
+
+        return values
+
+    result = minimize(
+        fun=cost,
+        x0=[0.0] * len(U),
+        method="SLSQP",
+        constraints=[{"type": "ineq", "fun": margins}],
+        options={"ftol": 1e-10, "maxiter": 200}
+    )
+
+    return result
+
 if __name__ == '__main__':
-    print(solve_mpc(state_init, delta_prev))
+    for i in range(0, simulation_step):
+        result = solve_mpc(state_init, delta_prev)
+        if result.success:
+            print("Optimal road wheel angle command: ", result.x)
+            print("Predicted states: ", predict(state_init, result.x, v, L, Ts))
+            print("Minimum Cost:", result.fun)
+            x_next = state_init[0] + Ts * v * math.cos(state_init[2])
+            y_next = state_init[1] + Ts * v * math.sin(state_init[2])
+            psi_next = state_init[2] + Ts * v / L * math.tan(result.x[0])
+            
+            state_init[0] = x_next
+            state_init[1] = y_next
+            state_init[2] = psi_next
+            delta_prev = result.x[0]
+        else:
+            print("Could not find any solution.")
