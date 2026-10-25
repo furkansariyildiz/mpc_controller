@@ -6,12 +6,12 @@ import math
 
 # Initialize
 state_init = [0.0, 1.0, 0.0]
-U = [math.radians(-5), math.radians(0)]
 delta_prev = math.radians(0)
 v = 4.0 # m/s
 L = 2.0 # m
 Ts = 0.1 # s
 simulation_step = 100
+N = 20 # Horizon
 
 # Weights
 Qy = 10
@@ -97,7 +97,7 @@ def solve_mpc(state_init: list, delta_prev: float):
 
     result = minimize(
         fun=cost,
-        x0=[0.0] * len(U),
+        x0=[0.0] * N,
         method="SLSQP",
         constraints=[{"type": "ineq", "fun": margins}],
         options={"ftol": 1e-10, "maxiter": 200}
