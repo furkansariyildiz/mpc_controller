@@ -13,7 +13,7 @@ v = 4.0 # m/s
 L = 2.0 # m
 Ts = 0.1 # s
 simulation_step = 200
-N = 2 # Horizon
+N = 10 # Horizon
 
 # Weights
 Qy = 10
@@ -177,12 +177,17 @@ if __name__ == '__main__':
 
     mean_solve_ms = (1000 * sum(solve_time_history) / len(solve_time_history))
     max_solve_ms = 1000 * max(solve_time_history)
+    commands = [0.0, *delta_history] 
+    changes = [commands[i + 1] - commands[i] for i in range(len(commands) - 1)]
 
     print(f"N={N}")
     print(f"RMS Lateral Error: {rms_y:.4f} m")
     print(f"Maximum negative-side excursion: {crossing:.4f} m")
     print(f"Mean Solve Time: {mean_solve_ms:.4f} ms")
     print(f"Max Solve Time: {max_solve_ms:.4f} ms")
+    print(f"Qy={Qy}, Qpsi={Qpsi}, Rdelta={Rdelta}, Sdelta={Sdelta}")
+    print("Sum of squared changes:", sum(d**2 for d in changes))
+    print("Max change [deg]:", math.degrees(max(abs(d) for d in changes)))
 
     for ax in axes:
         ax.grid(True)
