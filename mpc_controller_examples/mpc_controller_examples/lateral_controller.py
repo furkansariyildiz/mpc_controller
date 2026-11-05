@@ -1,4 +1,5 @@
 import math
+from time import perf_counter
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 
@@ -100,7 +101,7 @@ def predict(state_init: list, U: list, v: float, L: float, Ts: float):
 
     return X 
 
-def solve_mpc(state_init: list, delta_prev: float, path: list[list]):
+def solve_mpc(state_init: list, delta_prev: float, path: list[list], U_guess: list = None):
     """
     @brief Calculates the optimal delta command for the current state.
     @param  state_init: [x (m), y (m), psi (rad)] First state of the system.
@@ -152,7 +153,7 @@ def solve_mpc(state_init: list, delta_prev: float, path: list[list]):
 
     result = minimize(
         fun=cost,
-        x0=[0.0] * N,
+        x0=U_guess if U_guess is not None else [0.0] * N,
         method="SLSQP",
         constraints=[{"type": "ineq", "fun": margins}],
         options={"ftol": 1e-10, "maxiter": 200}
@@ -169,12 +170,21 @@ if __name__ == '__main__':
     psi_init = math.atan2(0.2 * math.cos(0.2 * position[0]), 1.0)
     state = [*position, psi_init]
     state_history = [state.copy()]
+    U_guess = [0.0] * N 
     
     reference = find_reference(position, path)
     tracking_error = tracking_errors(state, reference)
 
+    solve_time_history = []
+    e_y_history = []
+    e_psi_history = []
+    iteration_history = []
+
     for i in range(0, simulation_step):
-        result = solve_mpc(state, delta_prev, path)
+        start = perf_counter()
+        result = solve_mpc(state, delta_prev, path, U_guess)
+        solve_time = perf_counter() - start
+        print(f"Solve time: {solve_time * 1000:.4f} ms")
         if result.success:
             x_next = state[0] + Ts * v * math.cos(state[2])
             y_next = state[1] + Ts * v * math.sin(state[2])
@@ -182,11 +192,19 @@ if __name__ == '__main__':
             state = [x_next, y_next, psi_next]
             state_history.append(state.copy())
             delta_prev = result.x[0]
+            U_guess = [*result.x[1:], float(result.x[-1])]
 
             reference = find_reference(state[:2], path)
             e_y, e_psi = tracking_errors(state, reference)
+            iteration = result.nit
+
+            solve_time_history.append(solve_time)
+            e_y_history.append(e_y)        
+            e_psi_history.append(e_psi)
+            iteration_history.append(iteration)
 
             print("Minimum Cost:", result.fun)
+            print("Solver iterations:", iteration)
             print("Next state: ", state)
             print("Lateral Error: ", e_y)
             print("Heading Error: ", e_psi)
@@ -195,6 +213,15 @@ if __name__ == '__main__':
         else:
             print("MPC optimization failed at step ", i)
             break
+
+    mean_iteration = sum(iteration_history) / len(iteration_history)
+    mean_solve_time = sum(solve_time_history * 1000) / len(solve_time_history)
+    rms_y = math.sqrt(sum(e_y_sample**2 for e_y_sample in e_y_history) / len(e_y_history))
+
+    print("Mean Iteration: ", mean_iteration)
+    print("Mean Solve Time: ", mean_solve_time)
+    print("RMS Lateral Error. ", rms_y)
+    
 
     plt.figure(figsize=(12, 4))
 
