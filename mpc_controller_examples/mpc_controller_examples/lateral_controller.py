@@ -1,5 +1,6 @@
 import math
 from scipy.optimize import minimize
+import matplotlib.pyplot as plt
 
 # System Model: Xnext = A * X + B * U
 # X = [x (m), y (m), psi (rad)], U = [delta (rad/s)]
@@ -160,20 +161,17 @@ def solve_mpc(state_init: list, delta_prev: float, path: list[list]):
     return result
 
 if __name__ == '__main__':
-    path = [
-        [0.0, 0.0],
-        [30.0, 15.0],
-        [60.0, 30.0],
-        [100.0, 50.0],
-    ]
-    position = [4, 3]
-    state = [*position, math.radians(30.0)]
+    # y_ref = sin(0.2 * x), x: 0-100 m, sample of example: 0.5 m
+    x_samples = [0.5 * i for i in range(0, 201)]
+    path = [[x, math.sin(0.2 * x)] for x in x_samples]
+
+    position = [4.0, 1.5]
+    psi_init = math.atan2(0.2 * math.cos(0.2 * position[0]), 1.0)
+    state = [*position, psi_init]
+    state_history = [state.copy()]
     
     reference = find_reference(position, path)
     tracking_error = tracking_errors(state, reference)
-
-    print("Reference: ", reference)
-    print("Tracking Error: ", tracking_error)
 
     for i in range(0, simulation_step):
         result = solve_mpc(state, delta_prev, path)
@@ -182,6 +180,7 @@ if __name__ == '__main__':
             y_next = state[1] + Ts * v * math.sin(state[2])
             psi_next = state[2] + Ts * v / L * math.tan(result.x[0])
             state = [x_next, y_next, psi_next]
+            state_history.append(state.copy())
             delta_prev = result.x[0]
 
             reference = find_reference(state[:2], path)
@@ -191,11 +190,41 @@ if __name__ == '__main__':
             print("Next state: ", state)
             print("Lateral Error: ", e_y)
             print("Heading Error: ", e_psi)
+            print("Applied steering command [deg]: ", math.degrees(delta_prev))
             print("\n--------------------------------\n")
         else:
             print("MPC optimization failed at step ", i)
             break
 
-    # print(closest_point_on_segment(position, A, B))
-    # print(tracking_errors(state, reference))
+    plt.figure(figsize=(12, 4))
+
+    plt.plot(
+        [point[0] for point in path],
+        [point[1] for point in path],
+        "k--",
+        label="Reference path",
+    )
+
+    plt.plot(
+        [s[0] for s in state_history],
+        [s[1] for s in state_history],
+        "b-",
+        label="Vehicle path",
+    )
+
+    plt.scatter(
+        state_history[0][0],
+        state_history[0][1],
+        color="green",
+        label="Start",
+        zorder=3,
+    )
+
+    plt.xlabel("x [m]")
+    plt.ylabel("y [m]")
+    plt.title("MPC — Sinusoidal Path Tracking")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
     
